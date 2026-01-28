@@ -11,4 +11,4 @@ At UChicago, I’m concentrating on statistical learning, optimization, and comp
 
 I'm also interested in mathematics and optimization algorithms for large scale data mining.
 
-You can find my resume here: [WIP]
+You can find my resume here: [CV](/resume.pdf)
