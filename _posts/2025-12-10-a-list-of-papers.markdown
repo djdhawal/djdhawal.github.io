@@ -5,7 +5,7 @@ date:   2025-12-10 17:55:34 -0600
 categories: papers update
 ---
 
-Hi Everyone, 
+Hi Everyone.
 
 I am listing down the papers that I am reading. 
 

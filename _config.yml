@@ -30,6 +30,10 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: dxtdhawal
 github_username:  djdhawal
 
+#markdown: kramdown
+#kramdown:
+  #math_engine: mathjax
+
 # Build settings
 theme: minima
 #plugins:
