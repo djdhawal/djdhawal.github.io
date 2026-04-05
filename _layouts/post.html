@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include pretext-head.html %}
+  <title>{{ page.title }} — {{ site.title }}</title>
+  <style>
+    .post-header-canvas { margin-bottom: 0; }
+    .pretext-body { padding-top: 32px; padding-bottom: 40px; }
+  </style>
+</head>
+<body>
+
+  <canvas id="header-canvas"></canvas>
+  <canvas id="post-title-canvas" class="post-header-canvas"></canvas>
+
+  <div class="pretext-body">
+    {{ content }}
+  </div>
+
+  <canvas id="footer-canvas"></canvas>
+
+  <script id="site-data" type="application/json">
+    {
+      "title": {{ site.title | jsonify }},
+      "email": {{ site.email | jsonify }},
+      "github": {{ site.github_username | jsonify }},
+      "twitter": {{ site.twitter_username | jsonify }}
+    }
+  </script>
+
+  <script id="post-data" type="application/json">
+    {
+      "postTitle": {{ page.title | jsonify }},
+      "postDate": "{{ page.date | date: '%Y.%m.%d' }}",
+      "postCategories": {{ page.categories | jsonify }}
+    }
+  </script>
+
+  <script type="module">
+    import { prepareWithSegments, layoutWithLines } from 'https://esm.sh/@chenglou/pretext@0.0.4'
+
+    const PAD = 48
+    const BG = '#0a0a0a'
+
+    const data = JSON.parse(document.getElementById('site-data').textContent)
+    const post = JSON.parse(document.getElementById('post-data').textContent)
+
+    const SITE_FONT = '700 28px "JetBrains Mono", monospace'
+    const LINK_FONT = '400 12px "JetBrains Mono", monospace'
+    const POST_TITLE_FONT = '500 22px "JetBrains Mono", monospace'
+    const POST_META_FONT = '300 11px "JetBrains Mono", monospace'
+    const FOOTER_FONT = '300 11px "JetBrains Mono", monospace'
+
+    await document.fonts.load(SITE_FONT)
+    await document.fonts.load(POST_TITLE_FONT)
+    await document.fonts.ready
+
+    const headerCanvas = document.getElementById('header-canvas')
+    const titleCanvas = document.getElementById('post-title-canvas')
+    const footerCanvas = document.getElementById('footer-canvas')
+
+    let headerHits = []
+
+    function renderHeader() {
+      headerHits = []
+      const ctx = headerCanvas.getContext('2d')
+      const dpr = window.devicePixelRatio || 1
+      const cssW = Math.min(window.innerWidth, 820)
+      const maxW = cssW - PAD * 2
+
+      const titlePrep = prepareWithSegments(data.title, SITE_FONT)
+      const titleLayout = layoutWithLines(titlePrep, maxW, 36)
+
+      let totalH = PAD
+      totalH += titleLayout.height + 20
+      totalH += 18 + 24
+      totalH += 1
+
+      headerCanvas.width = cssW * dpr
+      headerCanvas.height = totalH * dpr
+      headerCanvas.style.width = cssW + 'px'
+      headerCanvas.style.height = totalH + 'px'
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+      ctx.fillStyle = BG
+      ctx.fillRect(0, 0, cssW, totalH)
+      ctx.textBaseline = 'top'
+
+      let y = PAD
+
+      // Site title
+      ctx.font = SITE_FONT
+      ctx.fillStyle = '#e8e8e8'
+      for (let i = 0; i < titleLayout.lines.length; i++) {
+        ctx.fillText(titleLayout.lines[i].text, PAD, y + i * 36)
+      }
+      headerHits.push({ x: PAD, y, w: titleLayout.lines[0].width, h: titleLayout.height, url: '/' })
+      y += titleLayout.height + 20
+
+      // Nav
+      ctx.font = LINK_FONT
+      ctx.fillStyle = '#555'
+      const navItems = [
+        { label: '> home', url: '/' },
+        { label: '> about', url: '/about' },
+        data.github ? { label: '> github', url: 'https://github.com/' + data.github } : null,
+        data.twitter ? { label: '> twitter', url: 'https://twitter.com/' + data.twitter } : null,
+        { label: '> mail', url: 'mailto:' + data.email }
+      ].filter(Boolean)
+
+      let navX = PAD
+      for (const item of navItems) {
+        const w = ctx.measureText(item.label).width
+        ctx.fillText(item.label, navX, y)
+        headerHits.push({ x: navX, y: y - 2, w, h: 18, url: item.url })
+        navX += w + 28
+      }
+      y += 18 + 24
+
+      // Separator
+      ctx.fillStyle = '#222'
+      ctx.fillRect(PAD, y - 1, maxW, 1)
+    }
+
+    function renderPostTitle() {
+      const ctx = titleCanvas.getContext('2d')
+      const dpr = window.devicePixelRatio || 1
+      const cssW = Math.min(window.innerWidth, 820)
+      const maxW = cssW - PAD * 2
+
+      const prep = prepareWithSegments(post.postTitle.toLowerCase(), POST_TITLE_FONT)
+      const layout = layoutWithLines(prep, maxW, 30)
+
+      let totalH = 32
+      totalH += layout.height + 12
+      totalH += 16 + 20 // meta line + gap
+
+      titleCanvas.width = cssW * dpr
+      titleCanvas.height = totalH * dpr
+      titleCanvas.style.width = cssW + 'px'
+      titleCanvas.style.height = totalH + 'px'
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+      ctx.fillStyle = BG
+      ctx.fillRect(0, 0, cssW, totalH)
+      ctx.textBaseline = 'top'
+
+      let y = 32
+
+      // Post title
+      ctx.font = POST_TITLE_FONT
+      ctx.fillStyle = '#ccc'
+      for (let i = 0; i < layout.lines.length; i++) {
+        ctx.fillText(layout.lines[i].text, PAD, y + i * 30)
+      }
+      y += layout.height + 12
+
+      // Date + categories
+      ctx.font = POST_META_FONT
+      ctx.fillStyle = '#444'
+      let meta = post.postDate
+      if (post.postCategories && post.postCategories.length) {
+        meta += '  [' + post.postCategories.join('/') + ']'
+      }
+      ctx.fillText(meta, PAD, y)
+    }
+
+    function renderFooter() {
+      const ctx = footerCanvas.getContext('2d')
+      const dpr = window.devicePixelRatio || 1
+      const cssW = Math.min(window.innerWidth, 820)
+      const maxW = cssW - PAD * 2
+
+      const totalH = 60
+      footerCanvas.width = cssW * dpr
+      footerCanvas.height = totalH * dpr
+      footerCanvas.style.width = cssW + 'px'
+      footerCanvas.style.height = totalH + 'px'
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+      ctx.fillStyle = BG
+      ctx.fillRect(0, 0, cssW, totalH)
+      ctx.textBaseline = 'top'
+
+      ctx.fillStyle = '#222'
+      ctx.fillRect(PAD, 16, maxW, 1)
+
+      ctx.font = FOOTER_FONT
+      ctx.fillStyle = '#333'
+      const parts = [
+        data.github ? 'gh/' + data.github : null,
+        data.twitter ? '@' + data.twitter : null,
+        data.email
+      ].filter(Boolean)
+      ctx.fillText(parts.join('    '), PAD, 32)
+    }
+
+    function setupHits(canvas, getHits) {
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect()
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top
+        for (const r of getHits()) {
+          if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+            if (r.url.startsWith('http') || r.url.startsWith('mailto:')) window.open(r.url, '_blank')
+            else window.location.href = r.url
+            return
+          }
+        }
+      })
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect()
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top
+        canvas.style.cursor = getHits().some(r =>
+          mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h
+        ) ? 'pointer' : 'default'
+      })
+    }
+
+    function render() {
+      renderHeader()
+      renderPostTitle()
+      renderFooter()
+    }
+
+    setupHits(headerCanvas, () => headerHits)
+    render()
+    window.addEventListener('resize', render)
+  </script>
+
+  <noscript>
+    <div style="color:#888;padding:3rem;font-family:monospace;">
+      <h1>{{ page.title }}</h1>
+      {{ content }}
+    </div>
+  </noscript>
+
+</body>
+</html>

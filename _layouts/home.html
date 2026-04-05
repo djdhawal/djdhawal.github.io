@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ site.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    canvas {
+      display: block;
+      cursor: default;
+    }
+
+    /* Overlay links positioned on top of the canvas */
+    .link-overlay {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .link-overlay a {
+      pointer-events: auto;
+      text-decoration: none;
+      color: transparent;
+      display: inline-block;
+    }
+
+    /* Fallback while canvas loads */
+    .fallback {
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      padding: 3rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="header-canvas"></canvas>
+  <canvas id="marquee-canvas"></canvas>
+  <canvas id="body-canvas"></canvas>
+
+  <!-- Hidden data for JS to read (from Jekyll) -->
+  <script id="site-data" type="application/json">
+    {
+      "title": {{ site.title | jsonify }},
+      "description": {{ site.description | jsonify }},
+      "email": {{ site.email | jsonify }},
+      "github": {{ site.github_username | jsonify }},
+      "twitter": {{ site.twitter_username | jsonify }},
+      "posts": [
+        {% for post in site.posts %}
+          {% if post.published != false %}
+          {
+            "title": {{ post.title | jsonify }},
+            "date": "{{ post.date | date: '%Y.%m.%d' }}",
+            "url": "{{ post.url | relative_url }}",
+            "categories": {{ post.categories | jsonify }}
+          }{% unless forloop.last %},{% endunless %}
+          {% endif %}
+        {% endfor %}
+      ]
+    }
+  </script>
+
+  <script type="module">
+    import { prepareWithSegments, layoutWithLines } from 'https://esm.sh/@chenglou/pretext@0.0.4'
+
+    const data = JSON.parse(document.getElementById('site-data').textContent)
+
+    const headerCanvas = document.getElementById('header-canvas')
+    const marqueeCanvas = document.getElementById('marquee-canvas')
+    const bodyCanvas = document.getElementById('body-canvas')
+    const headerCtx = headerCanvas.getContext('2d')
+    const marqueeCtx = marqueeCanvas.getContext('2d')
+    const bodyCtx = bodyCanvas.getContext('2d')
+
+    // Layout constants
+    const PAD = 48
+    const TITLE_FONT = '700 42px "JetBrains Mono", monospace'
+    const TAGLINE_FONT = '300 14px "JetBrains Mono", monospace'
+    const BODY_FONT = '400 13px "JetBrains Mono", monospace'
+    const LABEL_FONT = '500 11px "JetBrains Mono", monospace'
+    const POST_FONT = '400 13px "JetBrains Mono", monospace'
+    const POST_DATE_FONT = '300 11px "JetBrains Mono", monospace'
+    const LINK_FONT = '400 12px "JetBrains Mono", monospace'
+
+    // Colors
+    const BG = '#0a0a0a'
+    const COL_TITLE = '#e8e8e8'
+    const COL_TAGLINE = '#555'
+    const COL_BODY = '#888'
+    const COL_LABEL = '#555'
+    const COL_POST_TITLE = '#999'
+    const COL_POST_DATE = '#444'
+    const COL_POST_CAT = '#3a3a3a'
+    const COL_LINK = '#555'
+    const COL_SEPARATOR = '#222'
+
+    const bodyHitRegions = []
+
+    await document.fonts.load(TITLE_FONT)
+    await document.fonts.load(BODY_FONT)
+    await document.fonts.ready
+
+    // --- Marquee state ---
+    const TAGLINE = 'hellow worlld!'
+    const MARQUEE_GAP = 60   // px gap between repeated text
+    const MARQUEE_SPEED = 0.5 // px per frame
+    const MARQUEE_H = 22
+    let marqueeOffset = 0
+    let taglineWidth = 0
+
+    // Measure tagline width once
+    ;(() => {
+      const tmp = document.createElement('canvas').getContext('2d')
+      tmp.font = TAGLINE_FONT
+      taglineWidth = tmp.measureText(TAGLINE).width
+    })()
+
+    function sizeCanvas(canvas, ctx, cssW, cssH) {
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = cssW * dpr
+      canvas.height = cssH * dpr
+      canvas.style.width = cssW + 'px'
+      canvas.style.height = cssH + 'px'
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    // --- Header: title only ---
+    function renderHeader() {
+      const cssW = Math.min(window.innerWidth, 820)
+      const maxW = cssW - PAD * 2
+
+      const titlePrep = prepareWithSegments(data.title, TITLE_FONT)
+      const titleLayout = layoutWithLines(titlePrep, maxW, 50)
+
+      const totalH = PAD + titleLayout.height + 4
+      sizeCanvas(headerCanvas, headerCtx, cssW, totalH)
+
+      headerCtx.fillStyle = BG
+      headerCtx.fillRect(0, 0, cssW, totalH)
+      headerCtx.textBaseline = 'top'
+
+      headerCtx.font = TITLE_FONT
+      headerCtx.fillStyle = COL_TITLE
+      for (let i = 0; i < titleLayout.lines.length; i++) {
+        headerCtx.fillText(titleLayout.lines[i].text, PAD, PAD + i * 50)
+      }
+    }
+
+    // --- Marquee: animated tagline ---
+    function renderMarquee() {
+      const cssW = Math.min(window.innerWidth, 820)
+      const dpr = window.devicePixelRatio || 1
+
+      // Only resize if needed
+      if (marqueeCanvas.style.width !== cssW + 'px') {
+        sizeCanvas(marqueeCanvas, marqueeCtx, cssW, MARQUEE_H)
+      } else {
+        marqueeCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      }
+
+      const maxW = cssW - PAD * 2
+
+      marqueeCtx.fillStyle = BG
+      marqueeCtx.fillRect(0, 0, cssW, MARQUEE_H)
+
+      // Clip to content area (under the title text, not full width)
+      marqueeCtx.save()
+      marqueeCtx.beginPath()
+      marqueeCtx.rect(PAD, 0, maxW, MARQUEE_H)
+      marqueeCtx.clip()
+
+      marqueeCtx.font = TAGLINE_FONT
+      marqueeCtx.fillStyle = COL_TAGLINE
+      marqueeCtx.textBaseline = 'top'
+
+      // Draw repeated tagline copies to fill the clipped area
+      const cycle = taglineWidth + MARQUEE_GAP
+      const startX = PAD - (marqueeOffset % cycle)
+
+      for (let drawX = startX; drawX < PAD + maxW; drawX += cycle) {
+        marqueeCtx.fillText(TAGLINE, drawX, 4)
+      }
+
+      marqueeCtx.restore()
+
+      marqueeOffset += MARQUEE_SPEED
+    }
+
+    function marqueeLoop() {
+      renderMarquee()
+      requestAnimationFrame(marqueeLoop)
+    }
+
+    // --- Body: separator, description, nav, posts, footer ---
+    function renderBody() {
+      bodyHitRegions.length = 0
+      const cssW = Math.min(window.innerWidth, 820)
+      const maxW = cssW - PAD * 2
+
+      const descPrep = prepareWithSegments('$ ' + data.description, BODY_FONT)
+      const descLayout = layoutWithLines(descPrep, maxW, 22)
+
+      const postLayouts = data.posts.map(p => {
+        const prep = prepareWithSegments(p.title.toLowerCase(), POST_FONT)
+        const layout = layoutWithLines(prep, maxW - 120, 20)
+        return { post: p, lines: layout.lines, height: layout.height }
+      })
+
+      // Calculate total height
+      let totalH = 20                             // top gap
+      totalH += 1 + 28                            // separator
+      totalH += descLayout.height + 36            // description
+      totalH += 18 + 16                           // nav links
+      totalH += 18 + 16                           // "// recent writes" label
+      for (const pl of postLayouts) {
+        totalH += pl.height + 12
+      }
+      totalH += 40 + 20 + PAD                     // footer
+
+      sizeCanvas(bodyCanvas, bodyCtx, cssW, totalH)
+
+      bodyCtx.fillStyle = BG
+      bodyCtx.fillRect(0, 0, cssW, totalH)
+      bodyCtx.textBaseline = 'top'
+
+      let y = 12
+      const x = PAD
+
+      // Separator
+      bodyCtx.fillStyle = COL_SEPARATOR
+      bodyCtx.fillRect(x, y, maxW, 1)
+      y += 1 + 22
+
+      // Description
+      bodyCtx.font = BODY_FONT
+      bodyCtx.fillStyle = COL_BODY
+      for (let i = 0; i < descLayout.lines.length; i++) {
+        bodyCtx.fillText(descLayout.lines[i].text, x, y + i * 22)
+      }
+      y += descLayout.height + 36
+
+      // Nav links
+      bodyCtx.font = LINK_FONT
+      bodyCtx.fillStyle = COL_LINK
+      const navItems = [
+        { label: '> about', url: '/about' },
+        data.github ? { label: '> github', url: 'https://github.com/' + data.github } : null,
+        data.twitter ? { label: '> twitter', url: 'https://twitter.com/' + data.twitter } : null,
+        { label: '> mail', url: 'mailto:' + data.email }
+      ].filter(Boolean)
+
+      let navX = x
+      for (const item of navItems) {
+        const w = bodyCtx.measureText(item.label).width
+        bodyCtx.fillText(item.label, navX, y)
+        bodyHitRegions.push({ x: navX, y: y - 2, w, h: 18, url: item.url })
+        navX += w + 32
+      }
+      y += 36
+
+      // Posts header
+      bodyCtx.font = LABEL_FONT
+      bodyCtx.fillStyle = COL_LABEL
+      bodyCtx.fillText('// RECENT WRITES', x, y)
+      y += 18 + 16
+
+      // Posts
+      for (const pl of postLayouts) {
+        bodyCtx.font = POST_DATE_FONT
+        bodyCtx.fillStyle = COL_POST_DATE
+        bodyCtx.fillText(pl.post.date, x, y)
+
+        bodyCtx.font = POST_FONT
+        bodyCtx.fillStyle = COL_POST_TITLE
+        const titleX = x + 100
+        for (let i = 0; i < pl.lines.length; i++) {
+          bodyCtx.fillText(pl.lines[i].text, titleX, y + i * 20)
+        }
+
+        if (pl.post.categories && pl.post.categories.length) {
+          const catText = '[' + pl.post.categories.join('/') + ']'
+          const lastLine = pl.lines[pl.lines.length - 1]
+          const catX = titleX + bodyCtx.measureText(lastLine.text).width + 8
+          bodyCtx.font = POST_DATE_FONT
+          bodyCtx.fillStyle = COL_POST_CAT
+          bodyCtx.fillText(catText, catX, y + (pl.lines.length - 1) * 20)
+        }
+
+        bodyHitRegions.push({ x, y: y - 2, w: maxW, h: pl.height + 8, url: pl.post.url })
+        y += pl.height + 12
+      }
+
+      // Footer
+      y += 16
+      bodyCtx.fillStyle = COL_SEPARATOR
+      bodyCtx.fillRect(x, y, maxW, 1)
+      y += 20
+
+      bodyCtx.font = POST_DATE_FONT
+      bodyCtx.fillStyle = '#333'
+      const footerItems = [
+        data.github ? 'gh/' + data.github : null,
+        data.twitter ? '@' + data.twitter : null,
+        data.email
+      ].filter(Boolean)
+      bodyCtx.fillText(footerItems.join('    '), x, y)
+    }
+
+    // Click / hover for body canvas
+    function setupHits(canvas, getHits) {
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect()
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top
+        for (const r of getHits()) {
+          if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+            if (r.url.startsWith('http') || r.url.startsWith('mailto:')) window.open(r.url, '_blank')
+            else window.location.href = r.url
+            return
+          }
+        }
+      })
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect()
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top
+        canvas.style.cursor = getHits().some(r =>
+          mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h
+        ) ? 'pointer' : 'default'
+      })
+    }
+
+    function renderStatic() {
+      renderHeader()
+      renderBody()
+    }
+
+    setupHits(bodyCanvas, () => bodyHitRegions)
+    renderStatic()
+    marqueeLoop()
+    window.addEventListener('resize', renderStatic)
+  </script>
+
+  <noscript>
+    <div class="fallback">
+      <h1>{{ site.title }}</h1>
+      <p>{{ site.description }}</p>
+      <p><a href="{{ '/about' | relative_url }}" style="color:#888">About</a></p>
+    </div>
+  </noscript>
+
+</body>
+</html>
