@@ -4,6 +4,8 @@ title: About
 permalink: /about/
 ---
 
+![cool pic](/assets/images/cool_pic.jpeg)
+
 Hello!
 I'm pursuing the Applied Data Science program at the University of Chicago. Over the past couple of years, I worked as a Systems Software Engineer at HPE, where I focused on machine learning, NLP, and large-scale data engineering.
 

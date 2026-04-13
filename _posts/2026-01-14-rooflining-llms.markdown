@@ -3,7 +3,7 @@ layout: post
 title:  "Rooflning LLMs in JAX.."
 date:   2026-01-14 17:55:34 -0600
 categories: project update
-published : false
+#published : false
 ---
 
 Hi Everyone. 

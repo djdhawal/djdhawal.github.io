@@ -2,8 +2,8 @@
 layout: post
 title:  "The State of Spaces.."
 date:   2026-02-06 18:00:00 -0600
-categories: life update
-published : false
+categories: project update
+#published : false
 ---
 
 

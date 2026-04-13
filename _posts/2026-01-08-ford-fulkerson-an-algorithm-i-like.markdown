@@ -2,8 +2,8 @@
 layout: post
 title:  "Flomaxxing"
 date:   2026-01-08 17:55:34 -0600
-categories: algos i like
-published : false
+categories: algos explainer
+# published : false
 ---
 
 Hi Everyone.
