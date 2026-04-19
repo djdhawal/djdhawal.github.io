@@ -260,11 +260,8 @@
       bodyCtx.font = LINK_FONT
       bodyCtx.fillStyle = COL_LINK
       const navItems = [
-        { label: '> about', url: '/about' },
-        data.github ? { label: '> github', url: 'https://github.com/' + data.github } : null,
-        data.twitter ? { label: '> twitter', url: 'https://twitter.com/' + data.twitter } : null,
-        { label: '> mail', url: 'mailto:' + data.email }
-      ].filter(Boolean)
+        { label: '> about', url: '/about' }
+      ]
 
       let navX = x
       for (const item of navItems) {
@@ -316,11 +313,19 @@
       bodyCtx.font = POST_DATE_FONT
       bodyCtx.fillStyle = '#333'
       const footerItems = [
-        data.github ? 'gh/' + data.github : null,
-        data.twitter ? '@' + data.twitter : null,
-        data.email
+        data.github ? { text: 'gh/' + data.github, url: 'https://github.com/' + data.github } : null,
+        data.twitter ? { text: '@' + data.twitter, url: 'https://twitter.com/' + data.twitter } : null,
+        data.email ? { text: data.email, url: 'mailto:' + data.email } : null
       ].filter(Boolean)
-      bodyCtx.fillText(footerItems.join('    '), x, y)
+
+      const footerGap = bodyCtx.measureText('    ').width
+      let fx = x
+      for (const part of footerItems) {
+        const w = bodyCtx.measureText(part.text).width
+        bodyCtx.fillText(part.text, fx, y)
+        bodyHitRegions.push({ x: fx, y: y - 2, w, h: 16, url: part.url })
+        fx += w + footerGap
+      }
     }
 
     // Click / hover for body canvas

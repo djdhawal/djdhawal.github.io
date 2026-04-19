@@ -51,6 +51,7 @@
     const footerCanvas = document.getElementById('footer-canvas')
 
     let headerHits = []
+    let footerHits = []
 
     function renderHeader() {
       headerHits = []
@@ -91,11 +92,8 @@
       ctx.fillStyle = '#555'
       const navItems = [
         { label: '> home', url: '/' },
-        { label: '> about', url: '/about' },
-        data.github ? { label: '> github', url: 'https://github.com/' + data.github } : null,
-        data.twitter ? { label: '> twitter', url: 'https://twitter.com/' + data.twitter } : null,
-        { label: '> mail', url: 'mailto:' + data.email }
-      ].filter(Boolean)
+        { label: '> about', url: '/about' }
+      ]
 
       let navX = PAD
       for (const item of navItems) {
@@ -139,6 +137,7 @@
     }
 
     function renderFooter() {
+      footerHits = []
       const ctx = footerCanvas.getContext('2d')
       const dpr = window.devicePixelRatio || 1
       const cssW = Math.min(window.innerWidth, 820)
@@ -161,11 +160,19 @@
       ctx.font = FOOTER_FONT
       ctx.fillStyle = '#333'
       const parts = [
-        data.github ? 'gh/' + data.github : null,
-        data.twitter ? '@' + data.twitter : null,
-        data.email
+        data.github ? { text: 'gh/' + data.github, url: 'https://github.com/' + data.github } : null,
+        data.twitter ? { text: '@' + data.twitter, url: 'https://twitter.com/' + data.twitter } : null,
+        data.email ? { text: data.email, url: 'mailto:' + data.email } : null
       ].filter(Boolean)
-      ctx.fillText(parts.join('    '), PAD, 32)
+
+      const gap = ctx.measureText('    ').width
+      let fx = PAD
+      for (const part of parts) {
+        const w = ctx.measureText(part.text).width
+        ctx.fillText(part.text, fx, 32)
+        footerHits.push({ x: fx, y: 30, w, h: 16, url: part.url })
+        fx += w + gap
+      }
     }
 
     function setupHits(canvas, getHits) {
@@ -196,6 +203,7 @@
     }
 
     setupHits(headerCanvas, () => headerHits)
+    setupHits(footerCanvas, () => footerHits)
     render()
     window.addEventListener('resize', render)
   </script>
