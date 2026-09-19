@@ -8,7 +8,7 @@ published : false
 
 Hi Everyone.
 
-As time has passed, I have become more and more inclined to the idea that impossible is just a matter of perception. It is impossible for me to become the president of united states of america, not true. It is impossible for me to propose a thesis topic on message passing in Graph Neural Networks, without completely understanding either message passing or Graph Neural Netwroks.. not true. 
+As time has passed, I have become more and more inclined to the idea that impossible is just a matter of perception. It is impossible for me to become the president of The United States of America, not true. It is impossible for me to propose a thesis topic on message passing in Graph Neural Networks, without completely understanding either message passing or Graph Neural Netwroks.. not true. 
 
 I am betting on the future, nothing is impossible. This quarter I am learning about graphs, all sorts of graphs and I'm crawling through the endless internet in my own merry pace and scraping all the content on graphs, how to cut them, juice them and rinse them dry. I think I have devised a very strange way of learning, it is not helpful at all and makes me feel smart but sound like an idiot all the time. 
 
