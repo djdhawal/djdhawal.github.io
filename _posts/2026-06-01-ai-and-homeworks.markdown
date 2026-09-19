@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Homeworks in the times of AI"
-date:   2026-06-16 20:00:00 -0600
+date:   2026-06-01 20:00:00 -0600
 categories: musings blog
 published : true
 ---
