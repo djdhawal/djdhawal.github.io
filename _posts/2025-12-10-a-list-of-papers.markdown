@@ -12,6 +12,14 @@ I am listing down the papers that I am reading.
 The reason why I like reading research papers: because it makes me feel clever, makes me feel smart about myself. I like reading papers because it humbles me and gives my ego some kool aid. I started reading ML papers back in 2020, that's when I started a DL course by Dr.Ng on coursera, I read the ADAM paper and probably a few more, but couldn't completely understand them. Now with LLMs I'm able to smoothly sail through almost about any paper. I think in a manner, the hill climb to understanding a paper has been replaced by a zip line to the top, I wonder if that would affect the quality of the climbers, and what it would do to the crowd at the top of the hill.
 
 Nonetheless, here's what I am upto. 
+
+
+Papers in Pipeline:
+
+Papers that I am currently reading:
+
+Papers that I have read:
+
 1. LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics (this one's on my list and I'm reading it in installments. I'm intersted in ML Systems, so papers like these are very helpful) [paper link][le-JEPA]
 
 2. Learning Randomized Algorithms with Transformers (I'm learning about both randomized algorithms and transformers, I'm fascinated by both, hence the paper is taking more than a while to get off this list.) [paper link][algo-w-trans]
