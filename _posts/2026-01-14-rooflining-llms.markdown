@@ -5,8 +5,6 @@ date:   2026-01-14 17:55:34 -0600
 categories: project update
 published : false
 ---
+Hi everyone.
 
-Hi Everyone. 
-
-I'm starting to follow along Rafi Witten's quest to squeeze performance out of LLMs. The series goes over building a large language model piece by peice from scratch and then frying it over a hot skillet.
-
+I'm starting to follow along with Rafi Witten's quest to squeeze performance out of LLMs. The series goes over building a large language model piece by piece from scratch and then frying it on a hot skillet.
